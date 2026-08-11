@@ -2,144 +2,97 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kellerbuch</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b4636">
+<title>Kellerbuch V2</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f4f2;color:#222}
-*{box-sizing:border-box} body{margin:0;background:#f4f4f2}.app{max-width:1050px;margin:auto;padding:18px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-h1{margin:0;font-size:27px}.sub{color:#666;font-size:13px;margin-top:3px}
-button{border:0;border-radius:10px;padding:11px 15px;font-weight:600;cursor:pointer;background:#222;color:white}
-button.secondary{background:#e5e5e2;color:#222}
-nav{display:flex;gap:8px;overflow:auto;margin-bottom:18px}nav button{white-space:nowrap}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{background:white;border-radius:16px;padding:17px;box-shadow:0 1px 4px #00000012}
-.kpi{font-size:26px;font-weight:700}.muted{color:#777;font-size:13px}
-section{display:none}.active{display:block}
-.list{display:grid;gap:10px;margin-top:12px}.row{display:flex;justify-content:space-between;gap:15px;align-items:center}
-.tank{cursor:pointer}.tank strong{display:block;font-size:17px}.badge{font-size:12px;background:#e9f1e9;border-radius:999px;padding:5px 9px}
-form{display:grid;gap:11px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-label{font-size:13px;color:#555}input,select,textarea{width:100%;padding:11px;border:1px solid #d6d6d2;border-radius:10px;background:#fff;font:inherit}
-textarea{min-height:80px}.result{background:#f0f3ef;border-radius:12px;padding:12px;font-weight:600}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #eee}th{color:#666;font-weight:600}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.danger{background:#8b2222}
-@media(max-width:700px){.grid{grid-template-columns:1fr}.cols{grid-template-columns:1fr}.app{padding:12px}}
+:root{--bg:#f5f2ee;--card:#fff;--text:#26221f;--muted:#77716b;--accent:#5b4636;--line:#e5dfd9;--green:#dfeee1;--red:#f3dddd}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+.app{max-width:900px;margin:auto;padding:16px 14px calc(90px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}h1{margin:0;font-size:29px}h2{font-size:21px;margin:3px 0 13px}h3{font-size:16px;margin:0 0 8px}.sub,.muted{color:var(--muted);font-size:13px}
+button{border:0;border-radius:12px;padding:11px 15px;background:var(--accent);color:#fff;font-weight:700}button.light{background:#e8e2dc;color:var(--text)}button.red{background:#a23b3b}
+nav{position:fixed;z-index:10;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center;gap:3px;padding:8px calc(8px + env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom))}nav button{background:transparent;color:#777;font-size:11px;padding:8px 10px}nav button.active{background:#eee8e2;color:var(--accent)}
+section{display:none}.active{display:block}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:10px}.kpi{font-size:25px;font-weight:800}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tankgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.tankcard{min-height:145px;position:relative;overflow:hidden;cursor:pointer}.tanktop{display:flex;justify-content:space-between}.tankshape{height:70px;margin:13px auto 8px;width:65px;border:3px solid #777;border-radius:8px 8px 16px 16px;position:relative;background:linear-gradient(to top,#d8b38c 0 55%,transparent 55%)}.tankshape:before{content:"";position:absolute;left:7px;right:7px;top:-12px;height:10px;border:3px solid #777;border-bottom:0;border-radius:6px 6px 0 0}.tankliters{text-align:center;font-weight:800}.badge{font-size:11px;border-radius:999px;padding:5px 8px;background:var(--green)}.low{background:#f6ead4}.empty{background:#eee}
+label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}input,select,textarea{width:100%;padding:12px;border:1px solid #d7d0ca;border-radius:12px;background:#fff;font:inherit}textarea{min-height:85px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}.result{background:#f0ece8;border-radius:12px;padding:13px;margin-top:9px;font-weight:750}
+.measure{padding:12px 0;border-bottom:1px solid var(--line)}.measure:last-child{border:0}.pill{font-size:11px;background:#eee8e2;border-radius:99px;padding:4px 8px}.dangerbox{background:var(--red);padding:12px;border-radius:12px;font-size:13px;margin-top:12px}
+.modal{position:fixed;inset:0;background:#0007;z-index:20;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 14px calc(24px + env(safe-area-inset-bottom))}.sheet .card{margin-bottom:8px}
+.search{margin-bottom:10px}.hidden{display:none}
+@media(min-width:650px){.sheet{max-width:650px;margin:auto;border-radius:22px}.modal{align-items:center}}@media(max-width:560px){.grid{grid-template-columns:1fr 1fr 1fr}.tankgrid{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
-<header>
-<div><h1>🍷 Kellerbuch</h1><div class="sub">Digitale Maßnahmenblätter für den Weinkeller</div></div>
-<button onclick="show('measure')">＋ Maßnahme</button>
-</header>
-
-<nav>
-<button onclick="show('home')">Übersicht</button>
-<button onclick="show('tanks')">Tanks</button>
-<button onclick="show('measure')">Maßnahme erfassen</button>
-<button onclick="show('book')">Kellerbuch</button>
-</nav>
+<header><div><h1>🍷 Kellerbuch</h1><div class="sub">Weinkeller · Version 2</div></div><button onclick="openMeasure()">＋ Maßnahme</button></header>
 
 <section id="home" class="active">
 <div class="grid">
-<div class="card"><div class="muted">Tanks</div><div class="kpi" id="tankCount">0</div></div>
-<div class="card"><div class="muted">Gesamtmenge</div><div class="kpi"><span id="totalLiters">0</span> L</div></div>
-<div class="card"><div class="muted">Maßnahmen</div><div class="kpi" id="measureCount">0</div></div>
+<div class="card"><div class="muted">Tanks</div><div class="kpi" id="kTanks">0</div></div>
+<div class="card"><div class="muted">Weinmenge</div><div class="kpi"><span id="kLiters">0</span></div><div class="muted">Liter</div></div>
+<div class="card"><div class="muted">Maßnahmen</div><div class="kpi" id="kMeasures">0</div></div>
 </div>
-<div class="card" style="margin-top:12px"><h3>Letzte Maßnahmen</h3><div id="recent" class="list"></div></div>
+<div class="card"><h2>Grafischer Keller</h2><div id="homeTanks" class="tankgrid"></div></div>
+<div class="card"><h2>Letzte Maßnahmen</h2><div id="recent"></div></div>
 </section>
 
 <section id="tanks">
-<div class="card">
-<div class="row"><h2>Tanks</h2><button onclick="newTank()">＋ Tank</button></div>
-<div id="tankList" class="list"></div>
-</div>
-</section>
-
-<section id="measure">
-<div class="card">
-<h2>Maßnahme erfassen</h2>
-<form onsubmit="saveMeasure(event)">
-<div class="cols">
-<div><label>Datum</label><input id="mDate" type="date" required></div>
-<div><label>Tank</label><select id="mTank" required></select></div>
-</div>
-<div class="cols">
-<div><label>Maßnahme</label><select id="mType"><option>Schwefelung</option><option>Bentonit</option><option>CMC</option><option>Metaweinsäure</option><option>PVPP</option><option>Kupfer</option><option>Filtration</option><option>Entsäuerung</option><option>Verschnitt</option><option>Umfüllung</option><option>Abfüllung</option><option>Sonstiges</option></select></div>
-<div><label>Produkt</label><input id="mProduct" placeholder="z. B. Nacalit"></div>
-</div>
-<div class="cols">
-<div><label>Dosierung (pro hl)</label><input id="mDose" type="number" step="0.01" placeholder="30"></div>
-<div><label>Einheit</label><select id="mUnit"><option>g/hl</option><option>ml/hl</option><option>l/hl</option><option>kg/hl</option></select></div>
-</div>
-<div class="result">Benötigte Menge: <span id="calc">–</span></div>
-<label>Bemerkung<textarea id="mNote" placeholder="Grund, Beobachtung, Laborwert ..."></textarea></label>
-<button>Maßnahme speichern</button>
-</form>
-</div>
+<div class="card"><div class="row"><h2>Tankverwaltung</h2><button onclick="openTank()">＋ Tank</button></div>
+<input class="search" id="tankSearch" placeholder="Tank oder Wein suchen…" oninput="renderTanks()">
+<div id="tankList" class="tankgrid"></div></div>
 </section>
 
 <section id="book">
-<div class="card">
-<div class="row"><h2>Kellerbuch</h2><button class="secondary" onclick="exportCSV()">CSV exportieren</button></div>
-<div style="overflow:auto"><table><thead><tr><th>Datum</th><th>Tank</th><th>Maßnahme</th><th>Produkt</th><th>Dosierung</th><th>Menge</th></tr></thead><tbody id="bookBody"></tbody></table></div>
-</div>
+<div class="card"><div class="row"><h2>Kellerbuch</h2><button class="light" onclick="exportCSV()">CSV</button></div><div id="bookList"></div></div>
 </section>
+
+<section id="more">
+<div class="card"><h2>Mehr</h2><div class="actions"><button class="light" onclick="backup()">Datensicherung</button><button class="red" onclick="resetAll()">Alle Daten löschen</button></div></div>
+<div class="card"><h3>Als Nächstes</h3><div class="muted">Laborwerte · Tankbewegungen · Verschnitte · PDF-Maßnahmenblätter · Abfüllungen</div></div>
+</section>
+
+<nav>
+<button class="active" onclick="show('home',this)">⌂<br>Übersicht</button>
+<button onclick="show('tanks',this)">▣<br>Tanks</button>
+<button onclick="openMeasure()">＋<br>Maßnahme</button>
+<button onclick="show('book',this)">▤<br>Kellerbuch</button>
+<button onclick="show('more',this)">•••<br>Mehr</button>
+</nav>
 </div>
 
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div id="sheet" class="sheet"></div></div>
+
 <script>
-const KEY='kellerbuch-v1';
-let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
- tanks:[
-  {id:1,no:'Tank 1',wine:'Sauvignon blanc',year:2026,liters:2850,status:'fertig'},
-  {id:2,no:'Tank 2',wine:'Weißburgunder',year:2026,liters:5200,status:'fertig'}
- ],
- measures:[]
-};
-function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
-function show(id){document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');render()}
-function render(){
- document.getElementById('tankCount').textContent=data.tanks.length;
- document.getElementById('totalLiters').textContent=data.tanks.reduce((a,t)=>a+Number(t.liters||0),0).toLocaleString('de-AT');
- document.getElementById('measureCount').textContent=data.measures.length;
- document.getElementById('tankList').innerHTML=data.tanks.map(t=>`<div class="card tank"><div class="row"><div><strong>${t.no}</strong><span class="muted">${t.wine} · ${t.year}</span></div><div><b>${Number(t.liters).toLocaleString('de-AT')} L</b><br><span class="badge">${t.status}</span></div></div></div>`).join('');
- document.getElementById('mTank').innerHTML=data.tanks.map(t=>`<option value="${t.id}">${t.no} – ${t.wine} (${t.liters} L)</option>`).join('');
- document.getElementById('recent').innerHTML=data.measures.slice().reverse().slice(0,6).map(m=>`<div class="card"><div class="row"><div><b>${m.type}</b> · ${m.product||'–'}<div class="muted">${m.date} · ${m.tankNo}</div></div><b>${m.amount||'–'}</b></div></div>`).join('') || '<div class="muted">Noch keine Maßnahmen erfasst.</div>';
- document.getElementById('bookBody').innerHTML=data.measures.slice().reverse().map(m=>`<tr><td>${m.date}</td><td>${m.tankNo}</td><td>${m.type}</td><td>${m.product||'–'}</td><td>${m.dose?m.dose+' '+m.unit:'–'}</td><td>${m.amount||'–'}</td></tr>`).join('');
- calc();
-}
-function calc(){
- const tank=data.tanks.find(t=>t.id==document.getElementById('mTank').value);
- const dose=Number(document.getElementById('mDose').value);
- const unit=document.getElementById('mUnit').value;
- if(!tank||!dose){document.getElementById('calc').textContent='–';return}
- let amount=(Number(tank.liters)/100)*dose;
- let suffix=unit.replace('/hl','');
- document.getElementById('calc').textContent=(amount>=1000? (amount/1000).toLocaleString('de-AT',{maximumFractionDigits:2})+' '+(suffix==='g'?'kg':suffix):amount.toLocaleString('de-AT',{maximumFractionDigits:2})+' '+suffix);
-}
-['mTank','mDose','mUnit'].forEach(id=>document.getElementById(id).addEventListener('input',calc));
-document.getElementById('mDate').value=new Date().toISOString().slice(0,10);
-function saveMeasure(e){
- e.preventDefault();
- const tank=data.tanks.find(t=>t.id==document.getElementById('mTank').value);
- const dose=Number(document.getElementById('mDose').value);
- const unit=document.getElementById('mUnit').value;
- let amount='';
- if(dose){let x=tank.liters/100*dose;let base=unit.replace('/hl','');amount=(x>=1000?(x/1000).toFixed(2)+' '+(base==='g'?'kg':base):x.toFixed(2)+' '+base)}
- data.measures.push({date:mDate.value,tankNo:tank.no,type:mType.value,product:mProduct.value,dose,unit,amount,note:mNote.value});
- e.target.reset();mDate.value=new Date().toISOString().slice(0,10);save();show('book');
-}
-function newTank(){
- const no=prompt('Tanknummer / Bezeichnung:'); if(!no)return;
- const wine=prompt('Wein / Sorte:')||'';
- const liters=Number(prompt('Menge in Liter:')||0);
- const year=Number(prompt('Jahrgang:')||new Date().getFullYear());
- data.tanks.push({id:Date.now(),no,wine,year,liters,status:'aktiv'});save();
-}
-function exportCSV(){
- const rows=[['Datum','Tank','Maßnahme','Produkt','Dosierung','Menge','Bemerkung'],...data.measures.map(m=>[m.date,m.tankNo,m.type,m.product,m.dose?m.dose+' '+m.unit:'',m.amount,m.note])];
- const csv=rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\\n');
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='kellerbuch.csv';a.click();
-}
+const KEY='kellerbuch-v2-data';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{tanks:[
+{id:crypto.randomUUID(),number:'Tank 1',wine:'Sauvignon blanc',year:2026,liters:2850,status:'Aktiv',location:'Keller'},
+{id:crypto.randomUUID(),number:'Tank 2',wine:'Weißburgunder',year:2026,liters:5200,status:'Aktiv',location:'Keller'}
+],measures:[]};
+save(false);
+
+function save(doRender=true){localStorage.setItem(KEY,JSON.stringify(db));if(doRender)render()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function show(id,btn){document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');render()}
+function render(){document.getElementById('kTanks').textContent=db.tanks.length;document.getElementById('kLiters').textContent=Math.round(db.tanks.reduce((a,t)=>a+Number(t.liters||0),0)).toLocaleString('de-AT');document.getElementById('kMeasures').textContent=db.measures.length;renderTanks();document.getElementById('homeTanks').innerHTML=db.tanks.map(t=>tankCard(t)).join('')||'<div class="muted">Keine Tanks.</div>';document.getElementById('recent').innerHTML=db.measures.slice().reverse().slice(0,6).map(measureHTML).join('')||'<div class="muted">Noch keine Maßnahmen.</div>';document.getElementById('bookList').innerHTML=db.measures.slice().reverse().map(measureHTML).join('')||'<div class="muted">Noch keine Einträge.</div>'}
+function tankCard(t){let pct=Math.max(0,Math.min(100,(Number(t.liters)/10000)*100));let cls=t.liters<=500?'low':t.liters===0?'empty':'';return `<div class="card tankcard ${cls}" onclick="tankDetail('${t.id}')"><div class="tanktop"><b>${esc(t.number)}</b><span class="badge">${esc(t.status)}</span></div><div class="tankshape" style="background:linear-gradient(to top,#d8b38c ${pct}%,transparent ${pct}%)"></div><div class="tankliters">${Number(t.liters).toLocaleString('de-AT')} L</div><div class="muted">${esc(t.wine)} · ${t.year}</div></div>`}
+function renderTanks(){let q=(document.getElementById('tankSearch')?.value||'').toLowerCase();let arr=db.tanks.filter(t=>(t.number+' '+t.wine+' '+t.year).toLowerCase().includes(q));document.getElementById('tankList').innerHTML=arr.map(t=>tankCard(t)).join('')||'<div class="muted">Keine Tanks gefunden.</div>'}
+function measureHTML(m){let t=db.tanks.find(x=>x.id===m.tankID);let amount=calcAmount(t,m.dose,m.unit);return `<div class="measure"><div class="row"><b>${esc(m.type)}</b><span class="muted">${new Date(m.date).toLocaleDateString('de-AT')}</span></div><div class="muted">${esc(t?.number||'Gelöschter Tank')} · ${esc(m.product||'–')}</div>${m.dose?`<div>${m.dose} ${esc(m.unit)} → <b>${amount}</b></div>`:''}${m.note?`<div class="muted">${esc(m.note)}</div>`:''}</div>`}
+function calcAmount(t,dose,unit){if(!t||!dose)return '–';let a=t.liters/100*Number(dose),b=unit.replace('/hl','');if(a>=1000&&b==='g')return (a/1000).toLocaleString('de-AT',{maximumFractionDigits:2})+' kg';return a.toLocaleString('de-AT',{maximumFractionDigits:2})+' '+b}
+function openModal(html){document.getElementById('sheet').innerHTML=html;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function openTank(){openModal(`<h2>Neuen Tank anlegen</h2><label>Tanknummer</label><input id="tn"><label>Wein / Sorte</label><input id="tw"><div class="cols"><div><label>Jahrgang</label><input id="ty" type="number" value="2026"></div><div><label>Liter</label><input id="tl" type="number" step="1"></div></div><div class="cols"><div><label>Status</label><select id="ts"><option>Aktiv</option><option>Gärung</option><option>Fertig</option><option>Leer</option></select></div><div><label>Standort</label><input id="tloc" value="Keller"></div></div><div class="actions"><button onclick="addTank()">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
+function addTank(){if(!tn.value)return;db.tanks.push({id:crypto.randomUUID(),number:tn.value,wine:tw.value,year:Number(ty.value)||2026,liters:Number(tl.value)||0,status:ts.value,location:tloc.value});save();closeModal()}
+function openMeasure(prefill=null){if(!db.tanks.length){alert('Bitte zuerst einen Tank anlegen.');return}let opts=db.tanks.map(t=>`<option value="${t.id}" ${prefill===t.id?'selected':''}>${esc(t.number)} · ${Number(t.liters).toLocaleString('de-AT')} L</option>`).join('');openModal(`<h2>Maßnahme erfassen</h2><label>Datum</label><input id="md" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Tank</label><select id="mt">${opts}</select><label>Maßnahme</label><select id="mx"><option>Schwefelung</option><option>Bentonit</option><option>CMC</option><option>Metaweinsäure</option><option>PVPP</option><option>Kupfer</option><option>Filtration</option><option>Entsäuerung</option><option>Verschnitt</option><option>Umfüllung</option><option>Abfüllung</option><option>Sonstiges</option></select><label>Produkt</label><input id="mp"><div class="cols"><div><label>Dosierung</label><input id="mdo" type="number" step="0.01" oninput="liveCalc()"></div><div><label>Einheit</label><select id="mu" onchange="liveCalc()"><option>g/hl</option><option>ml/hl</option><option>l/hl</option><option>kg/hl</option></select></div></div><div class="result">Benötigte Menge: <span id="mc">–</span></div><label>Bemerkung</label><textarea id="mn"></textarea><div class="actions"><button onclick="addMeasure()">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
+function liveCalc(){let t=db.tanks.find(x=>x.id===mt.value);mc.textContent=calcAmount(t,mdo.value,mu.value)}
+function addMeasure(){let t=db.tanks.find(x=>x.id===mt.value);db.measures.push({id:crypto.randomUUID(),date:md.value,tankID:t.id,type:mx.value,product:mp.value,dose:mdo.value?Number(mdo.value):null,unit:mu.value,note:mn.value});save();closeModal()}
+function tankDetail(id){let t=db.tanks.find(x=>x.id===id);let ms=db.measures.filter(m=>m.tankID===id).slice().reverse();openModal(`<div class="row"><h2>${esc(t.number)}</h2><button class="light" onclick="closeModal()">×</button></div><div class="card"><h3>${esc(t.wine)}</h3><div class="muted">${t.year} · ${Number(t.liters).toLocaleString('de-AT')} L · ${esc(t.location)}</div><div class="actions"><button onclick="closeModal();openMeasure('${t.id}')">＋ Maßnahme</button><button class="light" onclick="editTank('${t.id}')">Bearbeiten</button><button class="red" onclick="deleteTank('${t.id}')">Tank löschen</button></div></div><h3>Tankhistorie</h3>${ms.map(measureHTML).join('')||'<div class="muted">Noch keine Maßnahmen.</div>'}<div class="dangerbox">Beim Löschen wird der Tank entfernt. Die bisherigen Maßnahmen bleiben im Kellerbuch erhalten.</div>`)}
+function editTank(id){let t=db.tanks.find(x=>x.id===id);openModal(`<h2>${esc(t.number)} bearbeiten</h2><label>Tanknummer</label><input id="en" value="${esc(t.number)}"><label>Wein / Sorte</label><input id="ew" value="${esc(t.wine)}"><div class="cols"><div><label>Jahrgang</label><input id="ey" type="number" value="${t.year}"></div><div><label>Liter</label><input id="el" type="number" value="${t.liters}"></div></div><label>Status</label><select id="es"><option ${t.status==='Aktiv'?'selected':''}>Aktiv</option><option ${t.status==='Gärung'?'selected':''}>Gärung</option><option ${t.status==='Fertig'?'selected':''}>Fertig</option><option ${t.status==='Leer'?'selected':''}>Leer</option></select><label>Standort</label><input id="eo" value="${esc(t.location||'')}"><div class="actions"><button onclick="saveTankEdit('${id}')">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
+function saveTankEdit(id){let t=db.tanks.find(x=>x.id===id);Object.assign(t,{number:en.value,wine:ew.value,year:Number(ey.value)||t.year,liters:Number(el.value)||0,status:es.value,location:eo.value});save();closeModal()}
+function deleteTank(id){let t=db.tanks.find(x=>x.id===id);if(!confirm(`Tank ${t.number} wirklich löschen?`))return;db.tanks=db.tanks.filter(x=>x.id!==id);save();closeModal()}
+function exportCSV(){let rows=[['Datum','Tank','Maßnahme','Produkt','Dosierung','Menge','Bemerkung'],...db.measures.map(m=>{let t=db.tanks.find(x=>x.id===m.tankID);return [m.date,t?.number||'Gelöscht',m.type,m.product,m.dose?m.dose+' '+m.unit:'',calcAmount(t,m.dose,m.unit),m.note]})];let csv=rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\n');download(csv,'kellerbuch.csv','text/csv;charset=utf-8')}
+function backup(){download(JSON.stringify(db,null,2),'kellerbuch-sicherung.json','application/json')}
+function download(c,n,t){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
+function resetAll(){if(confirm('Wirklich alle Kellerbuchdaten löschen?')){localStorage.removeItem(KEY);location.reload()}}
 render();
 </script>
 </body>
