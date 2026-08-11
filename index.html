@@ -39,7 +39,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}input,sel
 </section>
 
 <section id="tanks">
-<div class="card"><div class="row"><h2>Tankverwaltung</h2><button onclick="openTank()">＋ Tank</button></div>
+<div class="card"><div class="row"><h2>Tankverwaltung</h2><div class="actions"><button onclick="openHarvest()">＋ Erntezugang</button><button onclick="openAccess()">＋ Zugang</button><button onclick="openTank()">＋ Tank</button></div></div>
 <div class="cols">
 <select id="tankSort" onchange="renderTanks()">
 <option value="number">Tanknummer ↑</option>
@@ -62,21 +62,48 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}input,sel
 </div>
 <input class="search" id="tankSearch" placeholder="Tank oder Wein suchen…" oninput="renderTanks()">
 <div id="tankList" class="tankgrid"></div></div>
-<div class="card"><div class="row"><h2>Kellerplan</h2><span class="muted">Tanks verschieben</span></div><div class="kellerplan" id="kellerplan"><div class="planhint">Ziehe die Tanks mit dem Finger an ihre Position im Keller. Die Position wird gespeichert.</div></div></div>
 </section>
 
+<section id="harvest">
+<div class="card">
+<h2>🍇 Erntezugang</h2>
+<label>Datum</label><input id="hd" type="date">
+<label>Weingarten / Herkunft</label><input id="horigin" placeholder="z. B. Ried Muster">
+<div class="cols"><div><label>Sorte</label><input id="hvariety" placeholder="Sauvignon blanc"></div><div><label>Jahrgang</label><input id="hyear" type="number" value="2026"></div></div>
+<div class="cols"><div><label>Traubenmenge (kg)</label><input id="hkg" type="number" step="0.1" oninput="harvestCalc()"></div><div><label>KMW</label><input id="hkmw" type="number" step="0.1"></div></div>
+<label>Mostmenge / Zugang (Liter)</label><input id="hliters" type="number" step="1">
+<label>Tank</label><select id="htank"></select>
+<label>Gesundheitszustand – Mehrfachauswahl</label>
+<div class="actions" id="healthChoices">
+<label><input type="checkbox" value="Gesund"> Gesund</label>
+<label><input type="checkbox" value="Hagel"> Hagel</label>
+<label><input type="checkbox" value="Angeschlagen"> Angeschlagen</label>
+<label><input type="checkbox" value="Nicht gesund"> Nicht gesund</label>
+<label><input type="checkbox" value="Trockenschaden / Sonnenbrand"> Trockenschaden / Sonnenbrand</label>
+</div>
+<label>Maischestandzeit (Stunden)</label><input id="hmash" type="number" step="0.5" placeholder="z. B. 6">
+<div class="result">Neuer Tankbestand: <span id="hresult">–</span></div>
+<label>Bemerkung</label><textarea id="hnote" placeholder="Lesegut, Besonderheiten, Verarbeitung ..."></textarea>
+<div class="actions"><button onclick="saveHarvest()">Erntezugang speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>
+</div>
+</section>
+<section id="plan">
+<div class="card"><div class="row"><div><h2>🏭 Grafischer Keller</h2><div class="muted">Tankgrößen proportional zur Kapazität</div></div><button class="light" onclick="resetPlan()">Positionen zurücksetzen</button></div>
+<div class="kellerplan" id="kellerplan"><div class="planhint">Ziehe die Tanks mit dem Finger an ihre Position im Keller. Größe und Füllstand werden proportional dargestellt.</div></div></div>
+<div class="card"><h3>Legende</h3><div class="muted">Die Tankhöhe/-breite richtet sich nach der Tankkapazität. Die Füllung zeigt den aktuellen Bestand. So erkennst du sofort den Größenunterschied zwischen kleinen und großen Tanks.</div></div>
+</section>
 <section id="book">
 <div class="card"><div class="row"><h2>Kellerbuch</h2><button class="light" onclick="exportCSV()">CSV</button></div><div id="bookList"></div></div>
 </section>
 
 <section id="more">
-<div class="card"><h2>Mehr</h2><div class="actions"><button class="light" onclick="backup()">Datensicherung</button><button class="red" onclick="resetAll()">Alle Daten löschen</button></div></div>
+<div class="card"><h2>Mehr</h2><div class="actions"><button class="light" onclick="backup()">Datensicherung</button><button class="light" onclick="deleteMeasures()">Alle Maßnahmen löschen</button><button class="red" onclick="resetAll()">Alle Daten löschen</button></div><div class="muted" style="margin-top:10px">Beim Löschen von Zugängen/Abgängen wird der Tankbestand automatisch zurückgerechnet.</div></div>
 <div class="card"><h3>Als Nächstes</h3><div class="muted">Laborwerte · Tankbewegungen · Verschnitte · PDF-Maßnahmenblätter · Abfüllungen</div></div>
 </section>
 
 <nav>
 <button class="active" onclick="show('home',this)">⌂<br>Übersicht</button>
-<button onclick="show('tanks',this)">▣<br>Tanks</button>
+<button onclick="show('tanks',this)">▣<br>Tanks</button><button onclick="show('plan',this)">🏭<br>Kellerplan</button>
 <button onclick="openMeasure()">＋<br>Maßnahme</button>
 <button onclick="show('book',this)">▤<br>Kellerbuch</button>
 <button onclick="show('more',this)">•••<br>Mehr</button>
@@ -130,7 +157,7 @@ list.innerHTML=Object.keys(groups).map(key=>`<div style="grid-column:1/-1;margin
 function renderPlan(){
 let plan=document.getElementById('kellerplan');if(!plan)return;
 let hint='<div class="planhint">Ziehe die Tanks mit dem Finger an ihre Position im Keller. Die Position wird gespeichert.</div>';
-plan.innerHTML=hint+db.tanks.map((t,i)=>{let p=t.pos||{x:10+(i%4)*135,y:42+Math.floor(i/4)*160};let pct=Math.max(0,Math.min(100,(Number(t.liters||0)/Math.max(Number(t.capacity||10000),1))*100));return `<div class="plantank" data-id="${t.id}" style="left:${p.x}px;top:${p.y}px"><div class="liquid" style="height:${pct}%"></div><div class="pcontent"><div class="pnum">${esc(t.number)}</div><div><div class="pwine">${esc(t.wine)}</div><div class="pyear">${t.year}</div></div><div class="plit">${Number(t.liters||0).toLocaleString('de-AT')} L</div></div></div>`}).join('');
+plan.innerHTML=hint+db.tanks.map((t,i)=>{let p=t.pos||{x:10+(i%4)*150,y:42+Math.floor(i/4)*175};let cap=Math.max(Number(t.capacity||10000),1000);let pct=Math.max(0,Math.min(100,(Number(t.liters||0)/cap)*100));let scale=Math.max(.65,Math.min(1.55,Math.sqrt(cap/5000)));let w=Math.round(112*scale),h=Math.round(145*scale);return `<div class="plantank" data-id="${t.id}" style="left:${p.x}px;top:${p.y}px;width:${w}px;height:${h}px"><div class="liquid" style="height:${pct}%"></div><div class="pcontent"><div class="pnum">${esc(t.number)}</div><div><div class="pwine">${esc(t.wine)}</div><div class="pyear">${t.year}</div></div><div class="plit">${Number(t.liters||0).toLocaleString('de-AT')} L</div><div class="pyear">${Number(t.capacity||10000).toLocaleString('de-AT')} L Kap.</div></div></div>`}).join('');
 plan.querySelectorAll('.plantank').forEach(makeDraggable)
 }
 function makeDraggable(el){
@@ -140,22 +167,82 @@ function move(e){if(!sx&&!sy)return;let p=e.touches?e.touches[0]:e,dx=p.clientX-
 function up(){let t=db.tanks.find(x=>x.id===el.dataset.id);if(t){t.pos={x:parseFloat(el.style.left),y:parseFloat(el.style.top)};save(false)}sx=sy=0}
 el.addEventListener('touchstart',down,{passive:false});el.addEventListener('touchmove',move,{passive:false});el.addEventListener('touchend',up);el.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);el.addEventListener('click',()=>{if(!moved)tankDetail(el.dataset.id)})
 }
-function measureHTML(m){let t=db.tanks.find(x=>x.id===m.tankID);let amount=calcAmount(t,m.dose,m.unit);return `<div class="measure"><div class="row"><b>${esc(m.type)}</b><span class="muted">${new Date(m.date).toLocaleDateString('de-AT')}</span></div><div class="muted">${esc(t?.number||'Gelöschter Tank')} · ${esc(m.product||'–')}</div>${m.dose?`<div>${m.dose} ${esc(m.unit)} → <b>${amount}</b></div>`:''}${m.note?`<div class="muted">${esc(m.note)}</div>`:''}</div>`}
+function resetPlan(){db.tanks.forEach((t,i)=>delete t.pos);save();renderPlan()}
+function measureHTML(m){let t=db.tanks.find(x=>x.id===m.tankID);let amount=calcAmount(t,m.dose,m.unit);let signed=(m.type==='Abgang'?'−':m.type==='Zugang'||m.type==='Erntezugang'?'+':'');return `<div class="measure"><div class="row"><b>${signed} ${esc(m.type)}</b><button class="light" style="padding:6px 9px;font-size:11px" onclick="deleteMeasure('${m.id}')">Löschen</button><span class="muted">${new Date(m.date).toLocaleDateString('de-AT')}</span></div><div class="muted">${esc(t?.number||'Gelöschter Tank')} · ${esc(m.product||'–')}</div>${m.dose?`<div>${m.dose} ${esc(m.unit)} → <b>${amount}</b></div>`:''}${m.note?`<div class="muted">${esc(m.note)}</div>`:''}</div>`}
 function calcAmount(t,dose,unit){if(!t||!dose)return '–';let a=t.liters/100*Number(dose),b=unit.replace('/hl','');if(a>=1000&&b==='g')return (a/1000).toLocaleString('de-AT',{maximumFractionDigits:2})+' kg';return a.toLocaleString('de-AT',{maximumFractionDigits:2})+' '+b}
 function openModal(html){document.getElementById('sheet').innerHTML=html;document.getElementById('modal').classList.add('show')}
 function closeModal(){document.getElementById('modal').classList.remove('show')}
+function openAccess(){
+if(!db.tanks.length){alert('Bitte zuerst einen Tank anlegen.');return}
+document.getElementById('sheet').innerHTML=`<h2>＋ Neuer Zugang</h2><label>Datum</label><input id="ad" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Tank</label><select id="at">${db.tanks.map(t=>`<option value="${t.id}">${esc(t.number)} · ${Number(t.liters).toLocaleString('de-AT')} L</option>`).join('')}</select><label>Menge (Liter)</label><input id="al" type="number" step="1" oninput="accessCalc()"><label>Art des Zugangs</label><select id="ax"><option>Verschnitt</option><option>Zukauf</option><option>Rücklauf</option><option>Umfüllung</option><option>Sonstiger Zugang</option></select><label>Herkunft / Quelle</label><input id="as" placeholder="z. B. Tank 3"><div class="result">Neuer Tankbestand: <span id="ar">–</span></div><label>Bemerkung</label><textarea id="an"></textarea><div class="actions"><button onclick="saveAccess()">Zugang speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`;
+document.getElementById('modal').classList.add('show');accessCalc()
+}
+function accessCalc(){let t=db.tanks.find(x=>x.id===at?.value),add=Number(al?.value)||0;if(t)ar.textContent=(Number(t.liters)+add).toLocaleString('de-AT')+' L'}
+function saveAccess(){let t=db.tanks.find(x=>x.id===at.value),add=Number(al.value)||0;if(!t||add<=0){alert('Bitte Tank und eine positive Liter-Menge angeben.');return}t.liters=Number(t.liters)+add;db.measures.push({id:crypto.randomUUID(),date:ad.value,tankID:t.id,type:'Zugang',product:ax.value,dose:null,unit:'',note:`+${add} L | Quelle: ${as.value||'–'} | ${an.value||''}`});save();closeModal()}
+
+function openWithdrawal(){
+if(!db.tanks.length){alert('Bitte zuerst einen Tank anlegen.');return}
+document.getElementById('sheet').innerHTML=`<h2>− Abgang</h2><label>Datum</label><input id="wd" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Tank</label><select id="wt">${db.tanks.map(t=>`<option value="${t.id}">${esc(t.number)} · ${Number(t.liters).toLocaleString('de-AT')} L</option>`).join('')}</select><label>Menge (Liter)</label><input id="wl" type="number" step="1" oninput="withdrawCalc()"><label>Art des Abgangs</label><select id="wx"><option>Abfüllung</option><option>Verschnitt</option><option>Umfüllung</option><option>Filtration / Verlust</option><option>Verkauf / Entnahme</option><option>Sonstiger Abgang</option></select><label>Ziel / Empfänger</label><input id="ws" placeholder="z. B. Tank 8 / Abfüllung"><div class="result">Neuer Tankbestand: <span id="wr">–</span></div><label>Bemerkung</label><textarea id="wn"></textarea><div class="actions"><button onclick="saveWithdrawal()">Abgang speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`;
+document.getElementById('modal').classList.add('show');withdrawCalc()
+}
+function withdrawCalc(){let t=db.tanks.find(x=>x.id===wt?.value),sub=Number(wl?.value)||0;if(t)wr.textContent=Math.max(0,Number(t.liters)-sub).toLocaleString('de-AT')+' L'}
+function saveWithdrawal(){let t=db.tanks.find(x=>x.id===wt.value),sub=Number(wl.value)||0;if(!t||sub<=0){alert('Bitte Tank und eine positive Liter-Menge angeben.');return}if(sub>Number(t.liters)){alert('Der Abgang ist größer als der aktuelle Tankbestand.');return}t.liters=Number(t.liters)-sub;db.measures.push({id:crypto.randomUUID(),date:wd.value,tankID:t.id,type:'Abgang',product:wx.value,dose:null,unit:'',note:`-${sub} L | Ziel: ${ws.value||'–'} | ${wn.value||''}`});save();closeModal()}
+function openHarvest(){
+if(!db.tanks.length){alert('Bitte zuerst einen Tank anlegen.');return}
+document.getElementById('sheet').innerHTML=`<h2>🍇 Erntezugang</h2><label>Datum</label><input id="hd" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Weingarten / Herkunft</label><input id="horigin" placeholder="z. B. Ried Muster"><div class="cols"><div><label>Sorte</label><input id="hvariety" placeholder="Sauvignon blanc"></div><div><label>Jahrgang</label><input id="hyear" type="number" value="2026"></div></div><div class="cols"><div><label>Traubenmenge (kg)</label><input id="hkg" type="number" step="0.1"></div><div><label>KMW</label><input id="hkmw" type="number" step="0.1"></div></div><label>Mostmenge / Zugang (Liter)</label><input id="hliters" type="number" step="1" oninput="harvestCalc()">
+<div class="result">Ausbeute: <span id="hyield">–</span> L/kg · <span id="hyieldpct">–</span> %</div><label>Tank</label><select id="htank">${db.tanks.map(t=>`<option value="${t.id}">${esc(t.number)} · ${Number(t.liters).toLocaleString('de-AT')} L</option>`).join('')}</select><label>Gesundheitszustand – Mehrfachauswahl</label><div class="actions" id="healthChoices"><label><input type="checkbox" value="Gesund"> Gesund</label><label><input type="checkbox" value="Hagel"> Hagel</label><label><input type="checkbox" value="Angeschlagen"> Angeschlagen</label><label><input type="checkbox" value="Nicht gesund"> Nicht gesund</label><label><input type="checkbox" value="Trockenschaden / Sonnenbrand"> Trockenschaden / Sonnenbrand</label></div><label>Maischestandzeit (Stunden)</label><input id="hmash" type="number" step="0.5" placeholder="z. B. 6"><div class="result">Neuer Tankbestand: <span id="hresult">–</span></div><label>Bemerkung</label><textarea id="hnote" placeholder="Lesegut, Besonderheiten, Verarbeitung ..."></textarea><div class="actions"><button onclick="saveHarvest()">Erntezugang speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`;
+document.getElementById('modal').classList.add('show');harvestCalc()
+}
+function harvestCalc(){
+let t=db.tanks.find(x=>x.id===htank?.value),add=Number(hliters?.value)||0,kg=Number(hkg?.value)||0;
+if(t)hresult.textContent=(Number(t.liters)+add).toLocaleString('de-AT')+' L';
+if(kg>0&&add>0){
+let y=add/kg;
+hyield.textContent=y.toLocaleString('de-AT',{maximumFractionDigits:3});
+hyieldpct.textContent=(y*100).toLocaleString('de-AT',{maximumFractionDigits:1});
+}else{hyield.textContent='–';hyieldpct.textContent='–'}
+}
+function saveHarvest(){
+let t=db.tanks.find(x=>x.id===htank.value),add=Number(hliters.value)||0;if(!t||!add){alert('Bitte Tank und Liter angeben.');return}
+let health=[...document.querySelectorAll('#healthChoices input:checked')].map(x=>x.value);
+t.liters=Number(t.liters)+add;
+if(hvariety.value)t.wine=hvariety.value;
+if(hyear.value)t.year=Number(hyear.value);
+db.measures.push({id:crypto.randomUUID(),date:hd.value,tankID:t.id,type:'Erntezugang',product:'Ernte',dose:null,unit:'',note:`Herkunft: ${horigin.value||'–'} | Trauben: ${hkg.value||'–'} kg | Most: ${add} L | Ausbeute: ${Number(hkg.value)>0?(add/Number(hkg.value)).toFixed(3):'–'} L/kg (${Number(hkg.value)>0?((add/Number(hkg.value))*100).toFixed(1):'–'} %) | KMW: ${hkmw.value||'–'} | Gesundheitszustand: ${health.join(', ')||'–'} | Maischestandzeit: ${hmash.value||'–'} h | Zugang: +${add} L | ${hnote.value||''}`});
+save();closeModal();render()
+}
 function openTank(){openModal(`<h2>Neuen Tank anlegen</h2><label>Tanknummer</label><input id="tn"><label>Wein / Sorte</label><input id="tw"><div class="cols"><div><label>Jahrgang</label><input id="ty" type="number" value="2026"></div><div><label>Liter</label><input id="tl" type="number" step="1"></div></div><label>Tankkapazität</label><input id="tcap" type="number" value="10000" step="100"><div class="cols"><div><label>Status</label><select id="ts"><option>Aktiv</option><option>Gärung</option><option>Fertig</option><option>Leer</option></select></div><div><label>Standort</label><input id="tloc" value="Keller"></div></div><div class="actions"><button onclick="addTank()">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
 function addTank(){if(!tn.value)return;db.tanks.push({id:crypto.randomUUID(),number:tn.value,wine:tw.value,year:Number(ty.value)||2026,liters:Number(tl.value)||0,status:ts.value,location:tloc.value,capacity:Number(tcap.value)||10000});save();closeModal()}
-function openMeasure(prefill=null){if(!db.tanks.length){alert('Bitte zuerst einen Tank anlegen.');return}let opts=db.tanks.map(t=>`<option value="${t.id}" ${prefill===t.id?'selected':''}>${esc(t.number)} · ${Number(t.liters).toLocaleString('de-AT')} L</option>`).join('');openModal(`<h2>Maßnahme erfassen</h2><label>Datum</label><input id="md" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Tank</label><select id="mt">${opts}</select><label>Maßnahme</label><select id="mx"><option>Schwefelung</option><option>Bentonit</option><option>CMC</option><option>Metaweinsäure</option><option>PVPP</option><option>Kupfer</option><option>Filtration</option><option>Entsäuerung</option><option>Verschnitt</option><option>Umfüllung</option><option>Abfüllung</option><option>Sonstiges</option></select><label>Produkt</label><input id="mp"><div class="cols"><div><label>Dosierung</label><input id="mdo" type="number" step="0.01" oninput="liveCalc()"></div><div><label>Einheit</label><select id="mu" onchange="liveCalc()"><option>g/hl</option><option>ml/hl</option><option>l/hl</option><option>kg/hl</option></select></div></div><div class="result">Benötigte Menge: <span id="mc">–</span></div><label>Bemerkung</label><textarea id="mn"></textarea><div class="actions"><button onclick="addMeasure()">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
+function openMeasure(prefill=null){if(!db.tanks.length){alert('Bitte zuerst einen Tank anlegen.');return}let opts=db.tanks.map(t=>`<option value="${t.id}" ${prefill===t.id?'selected':''}>${esc(t.number)} · ${Number(t.liters).toLocaleString('de-AT')} L</option>`).join('');openModal(`<h2>Maßnahme erfassen</h2><label>Datum</label><input id="md" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Tank</label><select id="mt">${opts}</select><label>Maßnahme</label><select id="mx"><option>Schwefelung</option><option>Erntezugang</option><option>Bentonit</option><option>CMC</option><option>Metaweinsäure</option><option>PVPP</option><option>Kupfer</option><option>Filtration</option><option>Entsäuerung</option><option>Verschnitt</option><option>Umfüllung</option><option>Abfüllung</option><option>Sonstiges</option></select><label>Produkt</label><input id="mp"><div class="cols"><div><label>Dosierung</label><input id="mdo" type="number" step="0.01" oninput="liveCalc()"></div><div><label>Einheit</label><select id="mu" onchange="liveCalc()"><option>g/hl</option><option>ml/hl</option><option>l/hl</option><option>kg/hl</option></select></div></div><div class="result">Benötigte Menge: <span id="mc">–</span></div><label>Bemerkung</label><textarea id="mn"></textarea><div class="actions"><button onclick="addMeasure()">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
 function liveCalc(){let t=db.tanks.find(x=>x.id===mt.value);mc.textContent=calcAmount(t,mdo.value,mu.value)}
 function addMeasure(){let t=db.tanks.find(x=>x.id===mt.value);db.measures.push({id:crypto.randomUUID(),date:md.value,tankID:t.id,type:mx.value,product:mp.value,dose:mdo.value?Number(mdo.value):null,unit:mu.value,note:mn.value});save();closeModal()}
-function tankDetail(id){let t=db.tanks.find(x=>x.id===id);let ms=db.measures.filter(m=>m.tankID===id).slice().reverse();openModal(`<div class="row"><h2>${esc(t.number)}</h2><button class="light" onclick="closeModal()">×</button></div><div class="card"><h3>${esc(t.wine)}</h3><div class="muted">${t.year} · ${Number(t.liters).toLocaleString('de-AT')} L · ${esc(t.location)}</div><div class="actions"><button onclick="closeModal();openMeasure('${t.id}')">＋ Maßnahme</button><button class="light" onclick="editTank('${t.id}')">Bearbeiten</button><button class="red" onclick="deleteTank('${t.id}')">Tank löschen</button></div></div><h3>Tankhistorie</h3>${ms.map(measureHTML).join('')||'<div class="muted">Noch keine Maßnahmen.</div>'}<div class="dangerbox">Beim Löschen wird der Tank entfernt. Die bisherigen Maßnahmen bleiben im Kellerbuch erhalten.</div>`)}
+function tankDetail(id){let t=db.tanks.find(x=>x.id===id);let ms=db.measures.filter(m=>m.tankID===id).slice().reverse();openModal(`<div class="row"><h2>${esc(t.number)}</h2><button class="light" onclick="closeModal()">×</button></div><div class="card"><h3>${esc(t.wine)}</h3><div class="muted">${t.year} · ${Number(t.liters).toLocaleString('de-AT')} L · ${esc(t.location)}</div><div class="actions"><button onclick="closeModal();openMeasure('${t.id}')">＋ Maßnahme</button><button onclick="closeModal();openAccessFor('${t.id}')">＋ Zugang</button><button onclick="closeModal();openWithdrawalFor('${t.id}')">− Abgang</button><button class="light" onclick="editTank('${t.id}')">Bearbeiten</button><button class="red" onclick="deleteTank('${t.id}')">Tank löschen</button></div></div><h3>Tankhistorie</h3>${ms.map(measureHTML).join('')||'<div class="muted">Noch keine Maßnahmen.</div>'}<div class="dangerbox">Beim Löschen wird der Tank entfernt. Die bisherigen Maßnahmen bleiben im Kellerbuch erhalten.</div>`)}
+function openAccessFor(id){openAccess();setTimeout(()=>{if(typeof at!=='undefined')at.value=id;accessCalc()},0)}
+function openWithdrawalFor(id){openWithdrawal();setTimeout(()=>{if(typeof wt!=='undefined')wt.value=id;withdrawCalc()},0)}
 function editTank(id){let t=db.tanks.find(x=>x.id===id);openModal(`<h2>${esc(t.number)} bearbeiten</h2><label>Tanknummer</label><input id="en" value="${esc(t.number)}"><label>Wein / Sorte</label><input id="ew" value="${esc(t.wine)}"><div class="cols"><div><label>Jahrgang</label><input id="ey" type="number" value="${t.year}"></div><div><label>Liter</label><input id="el" type="number" value="${t.liters}"></div></div><label>Tankkapazität</label><input id="ecap" type="number" value="${t.capacity||10000}"><label>Status</label><select id="es"><option ${t.status==='Aktiv'?'selected':''}>Aktiv</option><option ${t.status==='Gärung'?'selected':''}>Gärung</option><option ${t.status==='Fertig'?'selected':''}>Fertig</option><option ${t.status==='Leer'?'selected':''}>Leer</option></select><label>Standort</label><input id="eo" value="${esc(t.location||'')}"><div class="actions"><button onclick="saveTankEdit('${id}')">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
 function saveTankEdit(id){let t=db.tanks.find(x=>x.id===id);Object.assign(t,{number:en.value,wine:ew.value,year:Number(ey.value)||t.year,liters:Number(el.value)||0,capacity:Number(ecap.value)||10000,status:es.value,location:eo.value});save();closeModal()}
 function deleteTank(id){let t=db.tanks.find(x=>x.id===id);if(!confirm(`Tank ${t.number} wirklich löschen?`))return;db.tanks=db.tanks.filter(x=>x.id!==id);save();closeModal()}
 function exportCSV(){let rows=[['Datum','Tank','Maßnahme','Produkt','Dosierung','Menge','Bemerkung'],...db.measures.map(m=>{let t=db.tanks.find(x=>x.id===m.tankID);return [m.date,t?.number||'Gelöscht',m.type,m.product,m.dose?m.dose+' '+m.unit:'',calcAmount(t,m.dose,m.unit),m.note]})];let csv=rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\n');download(csv,'kellerbuch.csv','text/csv;charset=utf-8')}
 function backup(){download(JSON.stringify(db,null,2),'kellerbuch-sicherung.json','application/json')}
 function download(c,n,t){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
+function movementLiters(m){
+let match=String(m.note||'').match(/(?:^|\|)\s*[+-]?\s*(\d+(?:[.,]\d+)?)\s*L/);
+return match?Number(match[1].replace(',','.')):0
+}
+function deleteMeasure(id){
+let m=db.measures.find(x=>x.id===id);if(!m)return;
+if(!confirm('Diesen Eintrag wirklich löschen? Der Tankbestand wird entsprechend korrigiert.'))return;
+let t=db.tanks.find(x=>x.id===m.tankID),liters=movementLiters(m);
+if(t&&liters){
+if(m.type==='Abgang')t.liters+=liters;
+else if(m.type==='Zugang'||m.type==='Erntezugang')t.liters=Math.max(0,t.liters-liters);
+}
+db.measures=db.measures.filter(x=>x.id!==id);save()
+}
+function deleteMeasures(){
+if(!db.measures.length){alert('Es gibt keine Maßnahmen zum Löschen.');return}
+if(confirm('Wirklich ALLE Maßnahmen und Bewegungen löschen? Die Tankbestände werden dabei NICHT verändert.')){db.measures=[];save()}
+}
 function resetAll(){if(confirm('Wirklich alle Kellerbuchdaten löschen?')){localStorage.removeItem(KEY);location.reload()}}
 render();
 </script>
