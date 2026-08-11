@@ -38,6 +38,26 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}input,sel
 
 <section id="tanks">
 <div class="card"><div class="row"><h2>Tankverwaltung</h2><button onclick="openTank()">＋ Tank</button></div>
+<div class="cols">
+<select id="tankSort" onchange="renderTanks()">
+<option value="number">Tanknummer ↑</option>
+<option value="numberDesc">Tanknummer ↓</option>
+<option value="wine">Sorte A–Z</option>
+<option value="year">Jahrgang ↑</option>
+<option value="yearDesc">Jahrgang ↓</option>
+<option value="liters">Liter ↑</option>
+<option value="litersDesc">Liter ↓</option>
+<option value="status">Status</option>
+<option value="location">Standort</option>
+</select>
+<select id="tankGroup" onchange="renderTanks()">
+<option value="none">Keine Gruppierung</option>
+<option value="status">Nach Status gruppieren</option>
+<option value="wine">Nach Sorte gruppieren</option>
+<option value="year">Nach Jahrgang gruppieren</option>
+<option value="location">Nach Standort gruppieren</option>
+</select>
+</div>
 <input class="search" id="tankSearch" placeholder="Tank oder Wein suchen…" oninput="renderTanks()">
 <div id="tankList" class="tankgrid"></div></div>
 </section>
@@ -75,7 +95,32 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function show(id,btn){document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');render()}
 function render(){document.getElementById('kTanks').textContent=db.tanks.length;document.getElementById('kLiters').textContent=Math.round(db.tanks.reduce((a,t)=>a+Number(t.liters||0),0)).toLocaleString('de-AT');document.getElementById('kMeasures').textContent=db.measures.length;renderTanks();document.getElementById('homeTanks').innerHTML=db.tanks.map(t=>tankCard(t)).join('')||'<div class="muted">Keine Tanks.</div>';document.getElementById('recent').innerHTML=db.measures.slice().reverse().slice(0,6).map(measureHTML).join('')||'<div class="muted">Noch keine Maßnahmen.</div>';document.getElementById('bookList').innerHTML=db.measures.slice().reverse().map(measureHTML).join('')||'<div class="muted">Noch keine Einträge.</div>'}
 function tankCard(t){let pct=Math.max(0,Math.min(100,(Number(t.liters)/10000)*100));let cls=t.liters<=500?'low':t.liters===0?'empty':'';return `<div class="card tankcard ${cls}" onclick="tankDetail('${t.id}')"><div class="tanktop"><b>${esc(t.number)}</b><span class="badge">${esc(t.status)}</span></div><div class="tankshape" style="background:linear-gradient(to top,#d8b38c ${pct}%,transparent ${pct}%)"></div><div class="tankliters">${Number(t.liters).toLocaleString('de-AT')} L</div><div class="muted">${esc(t.wine)} · ${t.year}</div></div>`}
-function renderTanks(){let q=(document.getElementById('tankSearch')?.value||'').toLowerCase();let arr=db.tanks.filter(t=>(t.number+' '+t.wine+' '+t.year).toLowerCase().includes(q));document.getElementById('tankList').innerHTML=arr.map(t=>tankCard(t)).join('')||'<div class="muted">Keine Tanks gefunden.</div>'}
+function tankNumber(n){let m=String(n).match(/\d+/);return m?Number(m[0]):999999}
+function sortTanks(arr,mode){
+let a=[...arr];
+if(mode==='number')a.sort((x,y)=>tankNumber(x.number)-tankNumber(y.number)||String(x.number).localeCompare(String(y.number),'de'));
+if(mode==='numberDesc')a.sort((x,y)=>tankNumber(y.number)-tankNumber(x.number)||String(y.number).localeCompare(String(x.number),'de'));
+if(mode==='wine')a.sort((x,y)=>String(x.wine).localeCompare(String(y.wine),'de'));
+if(mode==='year')a.sort((x,y)=>Number(x.year)-Number(y.year));
+if(mode==='yearDesc')a.sort((x,y)=>Number(y.year)-Number(x.year));
+if(mode==='liters')a.sort((x,y)=>Number(x.liters)-Number(y.liters));
+if(mode==='litersDesc')a.sort((x,y)=>Number(y.liters)-Number(x.liters));
+if(mode==='status')a.sort((x,y)=>String(x.status).localeCompare(String(y.status),'de'));
+if(mode==='location')a.sort((x,y)=>String(x.location).localeCompare(String(y.location),'de'));
+return a
+}
+function renderTanks(){
+let q=(document.getElementById('tankSearch')?.value||'').toLowerCase();
+let mode=document.getElementById('tankSort')?.value||'number';
+let group=document.getElementById('tankGroup')?.value||'none';
+let arr=sortTanks(db.tanks.filter(t=>(t.number+' '+t.wine+' '+t.year+' '+t.location+' '+t.status).toLowerCase().includes(q)),mode);
+let list=document.getElementById('tankList');
+if(!arr.length){list.innerHTML='<div class="muted">Keine Tanks gefunden.</div>';return}
+if(group==='none'){list.innerHTML=arr.map(t=>tankCard(t)).join('');return}
+let groups={};
+arr.forEach(t=>{let key=group==='status'?t.status:group==='wine'?t.wine:group==='year'?t.year:t.location;key=key||'Ohne Angabe';(groups[key]??=[]).push(t)});
+list.innerHTML=Object.keys(groups).map(key=>`<div style="grid-column:1/-1;margin-top:6px"><h3>${esc(key)}</h3></div>${groups[key].map(t=>tankCard(t)).join('')}`).join('')
+}
 function measureHTML(m){let t=db.tanks.find(x=>x.id===m.tankID);let amount=calcAmount(t,m.dose,m.unit);return `<div class="measure"><div class="row"><b>${esc(m.type)}</b><span class="muted">${new Date(m.date).toLocaleDateString('de-AT')}</span></div><div class="muted">${esc(t?.number||'Gelöschter Tank')} · ${esc(m.product||'–')}</div>${m.dose?`<div>${m.dose} ${esc(m.unit)} → <b>${amount}</b></div>`:''}${m.note?`<div class="muted">${esc(m.note)}</div>`:''}</div>`}
 function calcAmount(t,dose,unit){if(!t||!dose)return '–';let a=t.liters/100*Number(dose),b=unit.replace('/hl','');if(a>=1000&&b==='g')return (a/1000).toLocaleString('de-AT',{maximumFractionDigits:2})+' kg';return a.toLocaleString('de-AT',{maximumFractionDigits:2})+' '+b}
 function openModal(html){document.getElementById('sheet').innerHTML=html;document.getElementById('modal').classList.add('show')}
