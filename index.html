@@ -132,15 +132,32 @@ modal(`<h2>🧪 Maßnahmenblatt → ${esc(t.number)}</h2>
 <label>Vorlage</label><select id="mtemplate" onchange="applyTemplate()">${measureTemplates.map(x=>`<option ${x.name===tpl.name?"selected":""}>${esc(x.name)}</option>`).join("")}<option value="Sonstige">Sonstige</option></select>
 <label>Datum</label><input id="md" type="date" value="${new Date().toISOString().slice(0,10)}">
 <label>Maßnahme</label><input id="mt" value="${esc(tpl.name)}">
-<div class="cols"><div><label>Menge</label><input id="mq" type="number" step=".01"></div><div><label>Einheit</label><select id="mu"><option>g/hl</option><option>kg/hl</option><option>ml/hl</option><option>L/hl</option><option>g</option><option>kg</option><option>ml</option><option>L</option></select></div></div>
+<div class="cols"><div><label>Menge / Dosierung</label><input id="mq" type="number" step=".01" oninput="updateMeasureAmount('${tid}')"></div><div><label>Einheit</label><select id="mu" onchange="updateMeasureAmount('${tid}')"><option>g/hl</option><option>kg/hl</option><option>ml/hl</option><option>L/hl</option><option>g</option><option>kg</option><option>ml</option><option>L</option></select></div></div>
+<div id="measureAmountPreview" class="result">Aktuelle Tankmenge: <b>${Number(t.liters||0).toLocaleString("de-AT")} L</b><br>Gesamtmenge für diesen Tank: <b>–</b></div>
 <label>Bemerkung</label><textarea id="mn">${esc(tpl.note)}</textarea>
 <div class="actions"><button onclick="saveMeasure('${tid}')">Speichern</button><button class="light" onclick="printMeasure('${tid}')">🖨️ Maßnahmenblatt / PDF</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`);
 applyTemplate();
+}
+function updateMeasureAmount(tid){
+ let t=db.tanks.find(x=>x.id===tid),q=Number($("mq")?.value)||0,u=$("mu")?.value||"",box=$("measureAmountPreview");
+ if(!box||!t)return;
+ let liters=Number(t.liters)||0;
+ let total=null;
+ if(u==="g/hl") total=q*liters/100;
+ else if(u==="kg/hl") total=q*liters/100;
+ else if(u==="ml/hl") total=q*liters/100;
+ else if(u==="L/hl") total=q*liters/100;
+ if(total===null){
+   box.innerHTML=`Aktuelle Tankmenge: <b>${liters.toLocaleString("de-AT")} L</b><br>Gesamtmenge für diesen Tank: <b>${q?q.toLocaleString("de-AT")+" "+esc(u):"–"}</b>`;
+ }else{
+   box.innerHTML=`Aktuelle Tankmenge: <b>${liters.toLocaleString("de-AT")} L</b><br>Gesamtmenge für diesen Tank: <b>${total.toLocaleString("de-AT",{maximumFractionDigits:3})} ${esc(u.split("/")[0])}</b>`;
+ }
 }
 function applyTemplate(){
 let n=$("mtemplate").value,t=measureTemplates.find(x=>x.name===n);if(!t)return;
 $("mt").value=t.name;$("mn").value=t.note;
 let opts=[...$("mu").options],o=opts.find(x=>x.value===t.unit);if(o)$("mu").value=t.unit;
+updateMeasureAmount(currentMeasureTankId);
 }
 function templates(){
 modal(`<h2>📋 Maßnahmenvorlagen</h2><p class="muted">Vorlagen beschleunigen die Dokumentation. Sie können später erweitert werden.</p>${measureTemplates.map(t=>`<div class="card"><div class="row"><b>${esc(t.name)}</b><span class="badge">${esc(t.unit||"—")}</span></div><div class="muted">${esc(t.note)}</div></div>`).join("")}<div class="actions"><button class="light" onclick="closeModal()">Schließen</button></div>`)
@@ -190,11 +207,10 @@ function renderWineMeasures(){
  ms.forEach(m=>{const q=Number(m.quantity);if(q){const k=(m.type||"Sonstige")+"|"+(m.unit||"");totals[k]=(totals[k]||0)+q}});
  const tanks=[...new Set(ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return t?t.number:"Tank gelöscht"}))];
  const current=[...new Set(ms.map(m=>m.tankID).filter(Boolean))].reduce((sum,tid)=>sum+Number((db.tanks.find(t=>t.id===tid)||{}).liters||0),0);
- let dose=Object.entries(totals).map(([k,v])=>{const p=k.split("|"),per=current?Number(v)/current*100:0;return '<div class="measure row"><span>'+esc(p[0])+'</span><b>'+per.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'/hl</b></div>'}).join("");
  list.innerHTML='<div class="card"><h3>'+esc(name)+(year?' · '+esc(year):'')+'</h3><div class="muted">Komplette Historie · Tanks: '+esc(tanks.join(", ")||"—")+'</div><h4>Gesamtmengen</h4>'+
  Object.entries(totals).map(([k,v])=>{const p=k.split("|");return '<div class="measure row"><span><b>'+esc(p[0])+'</b></span><b>'+v.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'</b></div>'}).join("")+
  (Object.keys(totals).length?'':'<div class="muted">Keine Mengen erfasst.</div>')+
- '<h4>Gesamtmenge auf aktuelle Tankmenge bezogen</h4>'+(current?'<div class="muted">Aktuell insgesamt: <b>'+current.toLocaleString("de-AT")+' L</b></div>'+dose:'<div class="muted">Aktuelle Tankmenge nicht verfügbar.</div>')+'</div>'+
+ '</div>'+
  (ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return '<div class="card"><div class="row"><div><h3>'+esc(m.type)+'</h3><div class="muted">'+esc(m.date||"")+' · '+esc(t?t.number:"Tank gelöscht")+'</div></div><span class="badge">'+esc(m.quantity||"—")+' '+esc(m.unit||"")+'</span></div><p>'+esc(m.note||"")+'</p></div>'}).join("")||'<div class="card muted">Keine Maßnahmen vorhanden.</div>');
 }
 function clearWineMeasureFilter(){const s=document.getElementById("wineMeasureFilter");if(s)s.value="";renderWineMeasures()}
@@ -208,7 +224,7 @@ function printWineMeasureSummary(){
  const rows=ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return '<tr><td>'+esc(m.date||"")+'</td><td>'+esc(t?t.number:"Tank gelöscht")+'</td><td>'+esc(m.type||"")+'</td><td>'+esc(m.quantity||"—")+' '+esc(m.unit||"")+'</td><td>'+esc(m.note||"")+'</td></tr>'}).join("");
  const totals={};ms.forEach(m=>{const q=Number(m.quantity);if(q){const k=(m.type||"Sonstige")+"|"+(m.unit||"");totals[k]=(totals[k]||0)+q}});
  const current=[...new Set(ms.map(m=>m.tankID).filter(Boolean))].reduce((sum,tid)=>sum+Number((db.tanks.find(t=>t.id===tid)||{}).liters||0),0);
- const totalRows=Object.entries(totals).map(([k,v])=>{const p=k.split("|"),per=current?Number(v)/current*100:0;return '<tr><td>'+esc(p[0])+'</td><td>'+v.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'</td><td>'+(current?per.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'/hl bei '+current.toLocaleString("de-AT")+' L':'—')+'</td></tr>'}).join("");
+ const totalRows=Object.entries(totals).map(([k,v])=>{const p=k.split("|");return '<tr><td>'+esc(p[0])+'</td><td>'+v.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'</td></tr>'}).join("");
  const tanks=[...new Set(ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return t?t.number:"Tank gelöscht"}))];
  const doc='<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Maßnahmenblatt</title><style>@page{size:A4 landscape;margin:12mm}body{font:9pt Arial;color:#222}h1{font-size:18pt}.meta{color:#666;margin-bottom:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:5px;vertical-align:top}th{background:#eee}.tot{width:70%;margin-top:15px}.sig{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:30px}.line{border-top:1px solid #555;padding-top:5px}</style></head><body><h1>Maßnahmenblatt – komplette Weinchronik</h1><div class="meta"><b>'+esc(db.business.name||"Weinbaubetrieb")+'</b><br>Wein/Sorte: <b>'+esc(name)+'</b> · Jahrgang: '+esc(year||"—")+'<br>Alle beteiligten Tanks: '+esc(tanks.join(", "))+'<br>Aktuelle Gesamtmenge: '+current.toLocaleString("de-AT")+' L</div><table><thead><tr><th>Datum</th><th>Tank</th><th>Maßnahme</th><th>Menge</th><th>Bemerkung</th></tr></thead><tbody>'+rows+'</tbody></table><h3>Gesamtmengen</h3><table class="tot"><thead><tr><th>Maßnahme/Mittel</th><th>Gesamt</th><th>Auf aktuelle Tankmenge</th></tr></thead><tbody>'+totalRows+'</tbody></table><div class="sig"><div class="line">Durchgeführt von</div><div class="line">Kontrolle / Unterschrift</div></div><script>window.onload=()=>window.print()<\/script></body></html>';
  const w=window.open("","_blank");if(!w){alert("Pop-up wurde blockiert.");return}w.document.write(doc);w.document.close();
