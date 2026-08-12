@@ -58,12 +58,10 @@ nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid 
 
 <section id="measures">
 <div class="row"><div><h2>📋 Maßnahmenblätter</h2><div class="muted">Komplette Maßnahmenhistorie eines Weines – auch über mehrere Tanks hinweg.</div></div><button onclick="templates()">＋ Vorlagen</button></div>
-<div class="card">
-<h3>🍷 Wein auswählen</h3>
+<div class="card"><h3>🍷 Wein auswählen</h3>
 <label>Wein / Sorte / Jahrgang</label>
 <select id="wineMeasureFilter" onchange="renderWineMeasures()"><option value="">Bitte Wein auswählen…</option></select>
-<div class="actions"><button onclick="printWineMeasureSummary()">🖨️ Komplettes Maßnahmenblatt / PDF</button><button class="light" onclick="clearWineMeasureFilter()">Auswahl löschen</button></div>
-</div>
+<div class="actions"><button onclick="printWineMeasureSummary()">🖨️ Komplettes Maßnahmenblatt / PDF</button><button class="light" onclick="clearWineMeasureFilter()">Auswahl löschen</button></div></div>
 <div id="measureList" class="list"></div>
 </section>
 
@@ -112,7 +110,7 @@ function deleteTank(tid){if(!confirm("Tank wirklich löschen? Zugehörige Bewegu
 function tankAccess(tid){let t=db.tanks.find(x=>x.id===tid);modal(`<h2>＋ Zugang zu ${esc(t.number)}</h2><div class="card" onclick="closeModal();harvest('${tid}')"><h3>🍇 Erntezugang</h3><div class="muted">Trauben, KMW, Herkunft, Gesundheitszustand, Maischestandzeit und Ausbeute.</div></div><div class="card" onclick="closeModal();access('${tid}')"><h3>＋ Sonstiger Zugang</h3><div class="muted">Verschnitt, Zukauf, Rücklauf, Umfüllung oder sonstiger Zugang.</div></div>`)}
 function harvest(tid){let t=db.tanks.find(x=>x.id===tid);modal(`<h2>🍇 Erntezugang → ${esc(t.number)}</h2><label>Datum</label><input id="hd" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Weingarten / Herkunft</label><input id="ho"><div class="cols"><div><label>Sorte</label><input id="hv"></div><div><label>Jahrgang</label><input id="hy" type="number" value="2026"></div></div><div class="cols"><div><label>Trauben (kg)</label><input id="hk" type="number" step=".1" oninput="yieldCalc()"></div><div><label>KMW</label><input id="hm" type="number" step=".1"></div></div><label>Entstandene Mostmenge (L)</label><input id="hl" type="number" step="1" oninput="yieldCalc()"><div class="result">Ausbeute: <span id="y">–</span> L/kg · <span id="yp">–</span> %</div><label>Gesundheitszustand – Mehrfachauswahl</label><div><label class="choice"><input type="checkbox" value="Gesund"> Gesund</label><label class="choice"><input type="checkbox" value="Hagel"> Hagel</label><label class="choice"><input type="checkbox" value="Angeschlagen"> Angeschlagen</label><label class="choice"><input type="checkbox" value="Nicht gesund"> Nicht gesund</label><label class="choice"><input type="checkbox" value="Trockenschaden / Sonnenbrand"> Trockenschaden / Sonnenbrand</label></div><label>Maischestandzeit (Stunden)</label><input id="ms" type="number" step=".5"><label>Bemerkung</label><textarea id="hn"></textarea><div class="actions"><button onclick="saveHarvest('${tid}')">Erntezugang speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
 function yieldCalc(){let kg=Number(hk.value)||0,l=Number(hl.value)||0;if(kg&&l){y.textContent=(l/kg).toLocaleString("de-AT",{maximumFractionDigits:3});yp.textContent=((l/kg)*100).toLocaleString("de-AT",{maximumFractionDigits:1})}else{y.textContent="–";yp.textContent="–"}}
-function saveHarvest(tid){let t=db.tanks.find(x=>x.id===tid),l=Number(hl.value)||0,kg=Number(hk.value)||0;if(!l){alert("Mostmenge fehlt.");return}let health=[...document.querySelectorAll('#sheet input[type=checkbox]:checked')].map(x=>x.value);t.liters+=l;if(hv.value)t.wine=hv.value;t.year=Number(hy.value)||t.year;if(!t.wineId)t.wineId="W"+Date.now();let yy=kg?l/kg:0;let note=`Herkunft: ${ho.value||"—"} | Trauben: ${kg||"—"} kg | KMW: ${hm.value||"—"} | Ausbeute: ${yy.toFixed(3)} L/kg (${(yy*100).toFixed(1)} %) | Gesundheitszustand: ${health.join(", ")||"—"} | Maischestandzeit: ${ms.value||"—"} h | ${hn.value||""}`;movement(t,"Erntezugang",l,"+",note,hd.value);db.measures.push({id:id(),tankID:tid,wineId:t.wineId||"",wine:t.wine||"",year:t.year||"",date:hd.value,type:"Erntezugang",quantity:l,unit:"L Most",note:note});save();closeModal()}
+function saveHarvest(tid){let t=db.tanks.find(x=>x.id===tid),l=Number(hl.value)||0,kg=Number(hk.value)||0;if(!l){alert("Mostmenge fehlt.");return}let health=[...document.querySelectorAll('#sheet input[type=checkbox]:checked')].map(x=>x.value);t.liters+=l;if(hv.value)t.wine=hv.value;t.year=Number(hy.value)||t.year;let yy=kg?l/kg:0;let harvestNote=`Herkunft: ${ho.value||"—"} | Trauben: ${kg||"—"} kg | KMW: ${hm.value||"—"} | Ausbeute: ${yy.toFixed(3)} L/kg (${(yy*100).toFixed(1)} %) | Gesundheitszustand: ${health.join(", ")||"—"} | Maischestandzeit: ${ms.value||"—"} h | ${hn.value||""}`;movement(t,"Erntezugang",l,"+",harvestNote,hd.value);if(!t.wineId)t.wineId="W"+Date.now();db.measures.push({id:id(),tankID:tid,wineId:t.wineId||"",wine:t.wine||"",year:t.year||"",date:hd.value,type:"Erntezugang",quantity:l,unit:"L Most",note:harvestNote});save();closeModal()}
 function access(tid){let t=db.tanks.find(x=>x.id===tid);modal(`<h2>＋ Sonstiger Zugang → ${esc(t.number)}</h2><label>Datum</label><input id="ad" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Menge (L)</label><input id="al" type="number"><label>Art</label><select id="ax"><option>Verschnitt</option><option>Zukauf</option><option>Rücklauf</option><option>Umfüllung</option><option>Sonstiger Zugang</option></select><label>Quelle</label><input id="as"><label>Bemerkung</label><textarea id="an"></textarea><div class="actions"><button onclick="saveAccess('${tid}')">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
 function saveAccess(tid){let t=db.tanks.find(x=>x.id===tid),l=Number(al.value)||0;if(!l)return alert("Menge fehlt.");t.liters+=l;movement(t,"Zugang",l,"+",`${ax.value} | Quelle: ${as.value||"—"} | ${an.value||""}`,ad.value);save();closeModal()}
 function openWithdrawal(tid){let t=db.tanks.find(x=>x.id===tid);modal(`<h2>− Abgang → ${esc(t.number)}</h2><label>Datum</label><input id="wd" type="date" value="${new Date().toISOString().slice(0,10)}"><label>Menge (L)</label><input id="wl" type="number"><label>Art</label><select id="wx"><option>Abfüllung</option><option>Verschnitt</option><option>Umfüllung</option><option>Filtration / Verlust</option><option>Verkauf / Entnahme</option><option>Sonstiger Abgang</option></select><label>Ziel / Empfänger</label><input id="ws"><label>Bemerkung</label><textarea id="wn"></textarea><div class="actions"><button onclick="saveWithdrawal('${tid}')">Speichern</button><button class="light" onclick="closeModal()">Abbrechen</button></div>`)}
@@ -125,6 +123,8 @@ const measureTemplates=[
 {name:"PVPP",unit:"g/hl",note:"Phenolische Schönung."},
 {name:"Metaweinsäure",unit:"g/hl",note:"Kristallstabilisierung."},
 {name:"Kaliumbicarbonat",unit:"g/hl",note:"Entsäuerung."}
+{name:"Hefe",unit:"g/hl",note:"Hefezugabe / Reinzuchthefe."},
+{name:"Hefenährsalz",unit:"g/hl",note:"Nährstoffgabe für die Hefe."},
 ];
 function openMeasure(tid,templateName=""){
 let t=db.tanks.find(x=>x.id===tid),tpl=measureTemplates.find(x=>x.name===templateName)||measureTemplates[0];
@@ -170,58 +170,47 @@ function deleteMovement(mid){if(!confirm("Eintrag wirklich löschen? Der Tankbes
 function renderWineMeasures(){
  const sel=document.getElementById("wineMeasureFilter"),list=document.getElementById("measureList");
  if(!sel||!list)return;
- const old=sel.value;
- const wines=new Map();
- (db.tanks||[]).forEach(t=>{if(t.wine){let k=(t.wine+"||"+(t.year||""));wines.set(k,{name:t.wine,year:t.year||"",key:k})}});
- (db.measures||[]).forEach(m=>{if(m.wine){let k=(m.wine+"||"+(m.year||""));wines.set(k,{name:m.wine,year:m.year||"",key:k})}});
- const arr=[...wines.values()].sort((a,b)=>(a.name+" "+a.year).localeCompare(b.name+" "+b.year,"de"));
- sel.innerHTML='<option value="">Bitte Wein auswählen…</option>'+arr.map(w=>`<option value="${esc(w.key)}">${esc(w.name)}${w.year?" · "+esc(w.year):""}</option>`).join("");
+ const old=sel.value,wines={};
+ (db.tanks||[]).forEach(t=>{if(t.wine){const k=t.wine+"||"+(t.year||"");wines[k]={name:t.wine,year:t.year||"",key:k}}});
+ (db.measures||[]).forEach(m=>{if(m.wine){const k=m.wine+"||"+(m.year||"");wines[k]={name:m.wine,year:m.year||"",key:k}}});
+ const arr=Object.values(wines).sort((a,b)=>(a.name+" "+a.year).localeCompare(b.name+" "+b.year,"de"));
+ sel.innerHTML='<option value="">Bitte Wein auswählen…</option>'+arr.map(w=>'<option value="'+esc(w.key)+'">'+esc(w.name)+(w.year?' · '+esc(w.year):'')+'</option>').join("");
  if(arr.some(w=>w.key===old))sel.value=old;
  if(!sel.value){list.innerHTML='<div class="card muted">Bitte oben einen Wein auswählen.</div>';return}
- const [name,year]=sel.value.split("||");
+ const parts=sel.value.split("||"),name=parts[0],year=parts[1]||"";
  let ms=(db.measures||[]).filter(m=>String(m.wine||"")===name && String(m.year||"")===year);
- // Erntezugänge, die in älteren Daten nur als Bewegung gespeichert wurden,
- // werden ebenfalls als Maßnahmenblatt-Eintrag übernommen.
- const existingHarvestDates=new Set(ms.filter(m=>m.type==="Erntezugang").map(m=>`${m.tankID}|${m.date}|${m.quantity}`));
+ const existing=new Set(ms.filter(m=>m.type==="Erntezugang").map(m=>m.tankID+"|"+m.date+"|"+m.quantity));
  (db.movements||[]).filter(m=>m.type==="Erntezugang").forEach(m=>{
    const t=db.tanks.find(x=>x.id===m.tankID);
-   if(!t || String(t.wine||"")!==name || String(t.year||"")!==year)return;
-   const key=`${m.tankID}|${m.date}|${m.liters}`;
-   if(existingHarvestDates.has(key))return;
-   ms.push({id:"legacy-"+m.id,tankID:m.tankID,wine:t.wine||"",year:t.year||"",date:m.date,type:"Erntezugang",quantity:m.liters,unit:"L Most",note:m.note||""});
+   if(t&&String(t.wine||"")===name&&String(t.year||"")===year&&!existing.has(m.tankID+"|"+m.date+"|"+m.liters))
+     ms.push({id:"legacy-"+m.id,tankID:m.tankID,wine:t.wine||"",year:t.year||"",date:m.date,type:"Erntezugang",quantity:m.liters,unit:"L Most",note:m.note||""});
  });
  ms.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
- const tanks=[...new Set(ms.map(m=>db.tanks.find(t=>t.id===m.tankID)?.number||"Tank gelöscht"))];
- let totals={};ms.forEach(m=>{let q=Number(m.quantity);if(q){let k=(m.type||"Sonstige")+"|"+(m.unit||"");totals[k]=(totals[k]||0)+q}});
- list.innerHTML=`<div class="card"><h3>${esc(name)} ${year?"· "+esc(year):""}</h3><div class="muted">Komplette Historie · Tanks: ${esc(tanks.join(", ")||"—")}</div><h4>Gesamtmengen</h4>${Object.entries(totals).map(([k,v])=>{let[a,u]=k.split("|");return `<div class="measure row"><span><b>${esc(a)}</b></span><b>${v.toLocaleString("de-AT",{maximumFractionDigits:3})} ${esc(u||"")}</b></div>`}).join("")||'<div class="muted">Keine Mengen erfasst.</div>'}
- <h4>Auf aktuelle Tankmenge umgerechnet</h4>
- ${(()=>{
-   const currentLiters=[...new Set(ms.map(m=>m.tankID).filter(Boolean))].reduce((sum,tid)=>sum+Number(db.tanks.find(t=>t.id===tid)?.liters||0),0);
-   const dosages=Object.entries(totals).map(([k,v])=>{let[a,u]=k.split("|");let perHl=currentLiters>0?(Number(v)/currentLiters*100):0;return `<div class="measure row"><span><b>${esc(a)}</b><div class="muted">${currentLiters.toLocaleString("de-AT")} L aktuelle Tankmenge</div></span><b>${perHl.toLocaleString("de-AT",{maximumFractionDigits:3})} ${esc(u||"")}/hl</b></div>`}).join("");
-   return dosages||'<div class="muted">Keine Mengen berechenbar.</div>';
- })()}</div>`+
- ms.map(m=>{let t=db.tanks.find(x=>x.id===m.tankID);return `<div class="card"><div class="row"><div><h3>${esc(m.type)}</h3><div class="muted">${esc(m.date)} · ${esc(t?.number||"Tank gelöscht")}</div></div><span class="badge">${esc(m.quantity||"—")} ${esc(m.unit||"")}</span></div><p>${esc(m.note||"")}</p></div>`}).join("")||'<div class="card muted">Keine Maßnahmen vorhanden.</div>';
+ const totals={};
+ ms.forEach(m=>{const q=Number(m.quantity);if(q){const k=(m.type||"Sonstige")+"|"+(m.unit||"");totals[k]=(totals[k]||0)+q}});
+ const tanks=[...new Set(ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return t?t.number:"Tank gelöscht"}))];
+ const current=[...new Set(ms.map(m=>m.tankID).filter(Boolean))].reduce((sum,tid)=>sum+Number((db.tanks.find(t=>t.id===tid)||{}).liters||0),0);
+ let dose=Object.entries(totals).map(([k,v])=>{const p=k.split("|"),per=current?Number(v)/current*100:0;return '<div class="measure row"><span>'+esc(p[0])+'</span><b>'+per.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'/hl</b></div>'}).join("");
+ list.innerHTML='<div class="card"><h3>'+esc(name)+(year?' · '+esc(year):'')+'</h3><div class="muted">Komplette Historie · Tanks: '+esc(tanks.join(", ")||"—")+'</div><h4>Gesamtmengen</h4>'+
+ Object.entries(totals).map(([k,v])=>{const p=k.split("|");return '<div class="measure row"><span><b>'+esc(p[0])+'</b></span><b>'+v.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'</b></div>'}).join("")+
+ (Object.keys(totals).length?'':'<div class="muted">Keine Mengen erfasst.</div>')+
+ '<h4>Gesamtmenge auf aktuelle Tankmenge bezogen</h4>'+(current?'<div class="muted">Aktuell insgesamt: <b>'+current.toLocaleString("de-AT")+' L</b></div>'+dose:'<div class="muted">Aktuelle Tankmenge nicht verfügbar.</div>')+'</div>'+
+ (ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return '<div class="card"><div class="row"><div><h3>'+esc(m.type)+'</h3><div class="muted">'+esc(m.date||"")+' · '+esc(t?t.number:"Tank gelöscht")+'</div></div><span class="badge">'+esc(m.quantity||"—")+' '+esc(m.unit||"")+'</span></div><p>'+esc(m.note||"")+'</p></div>'}).join("")||'<div class="card muted">Keine Maßnahmen vorhanden.</div>');
 }
-function clearWineMeasureFilter(){let s=document.getElementById("wineMeasureFilter");if(s)s.value="";renderWineMeasures()}
+function clearWineMeasureFilter(){const s=document.getElementById("wineMeasureFilter");if(s)s.value="";renderWineMeasures()}
 function printWineMeasureSummary(){
  const sel=document.getElementById("wineMeasureFilter");if(!sel||!sel.value){alert("Bitte zuerst einen Wein auswählen.");return}
- const [name,year]=sel.value.split("||");
- let ms=(db.measures||[]).filter(m=>String(m.wine||"")===name && String(m.year||"")===year);
- const existingHarvestDates=new Set(ms.filter(m=>m.type==="Erntezugang").map(m=>`${m.tankID}|${m.date}|${m.quantity}`));
- (db.movements||[]).filter(m=>m.type==="Erntezugang").forEach(m=>{
-   const t=db.tanks.find(x=>x.id===m.tankID);
-   if(!t || String(t.wine||"")!==name || String(t.year||"")!==year)return;
-   const key=`${m.tankID}|${m.date}|${m.liters}`;
-   if(existingHarvestDates.has(key))return;
-   ms.push({id:"legacy-"+m.id,tankID:m.tankID,wine:t.wine||"",year:t.year||"",date:m.date,type:"Erntezugang",quantity:m.liters,unit:"L Most",note:m.note||""});
- });
- ms.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
- if(!ms.length){alert("Für diesen Wein sind keine Maßnahmen vorhanden.");return}
- const rows=ms.map(m=>{let t=db.tanks.find(x=>x.id===m.tankID);return `<tr><td>${esc(m.date||"")}</td><td>${esc(t?.number||"Tank gelöscht")}</td><td>${esc(m.type||"")}</td><td>${esc(m.quantity||"—")} ${esc(m.unit||"")}</td><td>${esc(m.note||"")}</td></tr>`}).join("");
- let totals={};ms.forEach(m=>{let q=Number(m.quantity);if(q){let k=(m.type||"Sonstige")+"|"+(m.unit||"");totals[k]=(totals[k]||0)+q}});
- const tr=Object.entries(totals).map(([k,v])=>{let[a,u]=k.split("|");return `<tr><td>${esc(a)}</td><td>${v.toLocaleString("de-AT",{maximumFractionDigits:3})} ${esc(u||"")}</td></tr>`}).join("");
- const tanks=[...new Set(ms.map(m=>db.tanks.find(t=>t.id===m.tankID)?.number||"Tank gelöscht"))];
- const doc=`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Maßnahmenblatt ${esc(name)}</title><style>@page{size:A4 landscape;margin:12mm}body{font:9pt Arial;color:#222}h1{font-size:18pt}.meta{color:#666;margin-bottom:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:5px;vertical-align:top}th{background:#eee}.tot{width:45%;margin-top:15px}.sig{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:30px}.line{border-top:1px solid #555;padding-top:5px}</style></head><body><h1>Maßnahmenblatt – komplette Weinchronik</h1><div class="meta"><b>${esc(db.business.name||"Weinbaubetrieb")}</b><br>Wein/Sorte: <b>${esc(name)}</b> · Jahrgang: ${esc(year||"—")}<br>Alle beteiligten Tanks: ${esc(tanks.join(", "))}</div><table><thead><tr><th>Datum</th><th>Tank</th><th>Maßnahme</th><th>Menge</th><th>Bemerkung</th></tr></thead><tbody>${rows}</tbody></table><h3>Gesamtmengen für diesen Wein</h3><table class="tot"><thead><tr><th>Maßnahme/Mittel</th><th>Gesamt</th><th>Auf aktuelle Tankmenge umgerechnet</th></tr></thead><tbody>${Object.entries(totals).map(([k,v])=>{let[a,u]=k.split("|");let currentLiters=[...new Set(ms.map(m=>m.tankID).filter(Boolean))].reduce((sum,tid)=>sum+Number(db.tanks.find(t=>t.id===tid)?.liters||0),0);let perHl=currentLiters>0?Number(v)/currentLiters*100:0;return `<tr><td>${esc(a)}</td><td>${v.toLocaleString("de-AT",{maximumFractionDigits:3})} ${esc(u||"")}</td><td>${perHl.toLocaleString("de-AT",{maximumFractionDigits:3})} ${esc(u||"")}/hl bei ${currentLiters.toLocaleString("de-AT")} L</td></tr>`}).join("")||'<tr><td colspan="3">Keine Mengen</td></tr>'}</tbody></table><div class="sig"><div class="line">Durchgeführt von</div><div class="line">Kontrolle / Unterschrift</div></div><script>window.onload=()=>window.print()<\/script></body></html>`;
+ const parts=sel.value.split("||"),name=parts[0],year=parts[1]||"";
+ let ms=(db.measures||[]).filter(m=>String(m.wine||"")===name&&String(m.year||"")===year);
+ const existing=new Set(ms.filter(m=>m.type==="Erntezugang").map(m=>m.tankID+"|"+m.date+"|"+m.quantity));
+ (db.movements||[]).filter(m=>m.type==="Erntezugang").forEach(m=>{const t=db.tanks.find(x=>x.id===m.tankID);if(t&&String(t.wine||"")===name&&String(t.year||"")===year&&!existing.has(m.tankID+"|"+m.date+"|"+m.liters))ms.push({id:"legacy-"+m.id,tankID:m.tankID,wine:t.wine||"",year:t.year||"",date:m.date,type:"Erntezugang",quantity:m.liters,unit:"L Most",note:m.note||""})});
+ ms.sort((a,b)=>(a.date||"").localeCompare(b.date||""));if(!ms.length){alert("Für diesen Wein sind keine Maßnahmen vorhanden.");return}
+ const rows=ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return '<tr><td>'+esc(m.date||"")+'</td><td>'+esc(t?t.number:"Tank gelöscht")+'</td><td>'+esc(m.type||"")+'</td><td>'+esc(m.quantity||"—")+' '+esc(m.unit||"")+'</td><td>'+esc(m.note||"")+'</td></tr>'}).join("");
+ const totals={};ms.forEach(m=>{const q=Number(m.quantity);if(q){const k=(m.type||"Sonstige")+"|"+(m.unit||"");totals[k]=(totals[k]||0)+q}});
+ const current=[...new Set(ms.map(m=>m.tankID).filter(Boolean))].reduce((sum,tid)=>sum+Number((db.tanks.find(t=>t.id===tid)||{}).liters||0),0);
+ const totalRows=Object.entries(totals).map(([k,v])=>{const p=k.split("|"),per=current?Number(v)/current*100:0;return '<tr><td>'+esc(p[0])+'</td><td>'+v.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'</td><td>'+(current?per.toLocaleString("de-AT",{maximumFractionDigits:3})+' '+esc(p[1]||"")+'/hl bei '+current.toLocaleString("de-AT")+' L':'—')+'</td></tr>'}).join("");
+ const tanks=[...new Set(ms.map(m=>{const t=db.tanks.find(x=>x.id===m.tankID);return t?t.number:"Tank gelöscht"}))];
+ const doc='<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Maßnahmenblatt</title><style>@page{size:A4 landscape;margin:12mm}body{font:9pt Arial;color:#222}h1{font-size:18pt}.meta{color:#666;margin-bottom:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:5px;vertical-align:top}th{background:#eee}.tot{width:70%;margin-top:15px}.sig{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:30px}.line{border-top:1px solid #555;padding-top:5px}</style></head><body><h1>Maßnahmenblatt – komplette Weinchronik</h1><div class="meta"><b>'+esc(db.business.name||"Weinbaubetrieb")+'</b><br>Wein/Sorte: <b>'+esc(name)+'</b> · Jahrgang: '+esc(year||"—")+'<br>Alle beteiligten Tanks: '+esc(tanks.join(", "))+'<br>Aktuelle Gesamtmenge: '+current.toLocaleString("de-AT")+' L</div><table><thead><tr><th>Datum</th><th>Tank</th><th>Maßnahme</th><th>Menge</th><th>Bemerkung</th></tr></thead><tbody>'+rows+'</tbody></table><h3>Gesamtmengen</h3><table class="tot"><thead><tr><th>Maßnahme/Mittel</th><th>Gesamt</th><th>Auf aktuelle Tankmenge</th></tr></thead><tbody>'+totalRows+'</tbody></table><div class="sig"><div class="line">Durchgeführt von</div><div class="line">Kontrolle / Unterschrift</div></div><script>window.onload=()=>window.print()<\/script></body></html>';
  const w=window.open("","_blank");if(!w){alert("Pop-up wurde blockiert.");return}w.document.write(doc);w.document.close();
 }
 function printSavedMeasure(mid){
